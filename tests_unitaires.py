@@ -1,4 +1,4 @@
-from poker_logic import creer_salon, rejoindre_salon
+from fonctionnement_app import creer_salon, rejoindre_salon
 
 
 def test_creer_salon():
