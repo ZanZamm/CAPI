@@ -1,5 +1,5 @@
 import streamlit as st
-from poker_logic import creer_salon, rejoindre_salon
+from fonctionnement_app import creer_salon, rejoindre_salon
 
 @st.cache_resource
 def get_salons():
