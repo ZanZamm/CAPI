@@ -69,6 +69,13 @@ Fichier d'instructions pour agent versionné (`CLAUDE.md`, `AGENTS.md`...) : <ou
 - **Ce que nous avons vérifié** : <Lecture du code généré et test>
 - **Ce que nous avons changé ou rejeté, et pourquoi** :
 
+### 2026-11-16 : <Fonction de vote et sélection de carte> (US-012)
+
+- **Demande (résumé fidèle)** : <Ajouter une liste de carte et une fonction voter(salons, code, pseudo, carte) et met les données dans un dictionnaire "votes" et intégrer du coup les boutons pour les votes de chaque cartes (streamlit)>
+- **Résultat** : <modifié>
+- **Ce que nous avons vérifié** : <Test manuel avec deux joueurs pour vérifier l'enregistrement du vote>
+- **Ce que nous avons changé ou rejeté, et pourquoi** :
+
 
 
 ## Bilan (à compléter en séance 4, 3 lignes)
