@@ -1,5 +1,5 @@
 import streamlit as st
-from fonctionnement_app import creer_salon, rejoindre_salon
+from fonctionnement_app import cartes, creer_salon, rejoindre_salon, voter
 
 @st.cache_resource
 def get_salons():
@@ -36,17 +36,41 @@ if "code_salon" not in st.session_state:
 # Écran du salon
 else:
     code = st.session_state.code_salon
+    pseudo = st.session_state.pseudo
+    
     if code not in salons:
         del st.session_state.code_salon
         st.rerun()
 
+    salon = salons[code]
+
     st.title("Salon de jeu")
-    st.write(f"Code à partager : **{code}**")
+    st.write(f"Code à partager : **{code}** | Joueur : **{pseudo}**")
+    st.write("---")
+
+    # Sélection d'une carte (US-012)
+    st.write("### Choisissez votre carte :")
+    colonnes = st.columns(6)
+    for i, carte in enumerate(cartes):
+        with colonnes[i % 6]:
+            if st.button(carte, key=f"btn_{carte}"):
+                voter(salons, code, pseudo, carte)
+                st.rerun()
+
+    mon_vote = salon["votes"].get(pseudo)
+    if mon_vote is not None:
+        st.info(f"Votre carte sélectionnée : **{mon_vote}**")
+
     st.write("---")
     
+    # Liste des joueurs et état de leur vote
     st.write("### Joueurs connectés :")
-    for joueur in salons[code]["joueurs"]:
-        st.write(f"- {joueur}")
+    for joueur in salon["joueurs"]:
+        vote_joueur = salon["votes"].get(joueur)
+        if vote_joueur is not None:
+            st.write(f"- {joueur} : a choisi une carte")
+        else:
+            st.write(f"- {joueur} : en attente...")
         
     st.write("---")
     if st.button("Actualiser"):
