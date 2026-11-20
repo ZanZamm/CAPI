@@ -1,5 +1,11 @@
 import streamlit as st
-from fonctionnement_app import cartes, creer_salon, rejoindre_salon, voter
+from fonctionnement_app import (
+    cartes, 
+    creer_salon, 
+    rejoindre_salon, 
+    voter, 
+    afficher_votes,
+)
 
 @st.cache_resource
 def get_salons():
@@ -62,6 +68,13 @@ else:
         st.info(f"Votre carte sélectionnée : **{mon_vote}**")
 
     st.write("---")
+
+    # Cacher ou afficher les cartes réservé au créateur de session (US-013)
+    if pseudo == salon["créateur"]:
+        boutons_hide_and_show = "Afficher les cartes" if salon["cartes_visibles"] else "Cacher les cartes"
+        if st.button(boutons_hide_and_show):
+            afficher_votes(salons, code)
+            st.rerun()
     
     # Liste des joueurs et état de leur vote
     st.write("### Joueurs connectés :")
