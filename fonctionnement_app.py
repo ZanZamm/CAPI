@@ -28,6 +28,6 @@ def voter(salons, code, pseudo, carte):
 
 def afficher_votes(salons, code):
     if code in salons:
-        salons[code]["cartes_visibles"] = not salons[code]["cartes_visibles"]
+        salons[code]["cartes_visibles"] = not salons[code].get("cartes_visibles", False)
         return True
     return False
