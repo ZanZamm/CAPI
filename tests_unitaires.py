@@ -1,4 +1,9 @@
-from fonctionnement_app import creer_salon, rejoindre_salon, voter
+from fonctionnement_app import (
+    creer_salon, 
+    rejoindre_salon, 
+    voter,
+    afficher_votes,
+)
 
 def test_creer_salon():
     salons = {}
@@ -32,3 +37,18 @@ def test_voter_carte():
     succes = voter(salons, code, "Alice", "5")
     assert succes is True
     assert salons[code]["votes"]["Alice"] == "5"
+
+def test_afficher_votes():
+    salons = {}
+    code = creer_salon(salons, "Alice")
+    voter(salons, code, "Alice", "5")
+    voter(salons, code, "Bob", "8")
+    succes = afficher_votes(salons, code)
+    assert succes is True
+    assert salons[code]["cartes_visibles"] is True
+
+def test_afficher_votes_invalide():
+    salons = {}
+    creer_salon(salons, "Alice")
+    succes = afficher_votes(salons, "99999")
+    assert succes is False
