@@ -58,27 +58,31 @@ else:
     tour_demarre = salon.get("tour_demarre", False)
     regle = salon.get("regle_de_validation", None)
     resultat_tour = salon.get("resultat_tour")
+    valeur_resultat = salon.get("valeur_resultat")
     tous_voté = tous_ont_vote(salon)
 
-    if tour_demarre:
-        st.title(f"Salon de jeu - Tour **{tour}**")
-    else:
-        st.title("Salon de jeu")
+
+    st.title(f"Salon de jeu - Tour **{tour}**")
     st.write(f"Code à partager : **{code}** | Joueur : **{pseudo}**")
     if regle:
         st.write(f"Règle de validation : **{regle}**")
     st.write("---")
 
-    # Selection d'une règle de validation (US-02)
+    # Selection d'une règle de validation réservée au créateur de session (US-02) + conditions de validitée règles sélectionnées (US-02 + US-03)
     if not tour_demarre:
         if pseudo == salon["createur"]:
             st.write("### Définir la règle de validation pour ce tour :")
-            regle_selectionnee = st.selectbox("Règle :", regles_de_validation, key="select_regle")
+            if tour == 1:
+                options_regles = list(regles_de_validation)
+            else:
+                options_regles = [r for r in regles_de_validation if r != "stricte au premier tour"]
+            regle_selectionnee = st.selectbox("Règle :", options_regles, key=f"select_regle_tour_{tour}")
             if st.button("Valider la règle", key="btn_valider_regle"):
                 definir_regle_de_validation(salons, code, regle_selectionnee)
                 st.rerun()
         else:
             st.warning("En attente de la définition de la règle par le créateur du salon...")
+
     else:
 
         # Sélection d'une carte (US-012)
@@ -99,11 +103,14 @@ else:
         # Afficher les résultats d'un tour + conditions de validité d'un tour (US-02)
         if visibles and resultat_tour is not None:
             if resultat_tour is True:
-                st.success("Résultat du tour : Tous les votes sont identiques. Le tour est **valide** !!")
-            else:
-                st.error("Résultat du tour : Les votes ne sont pas tous identiques. Le tour est **invalide**, relancez un nouveau tour !")
+                votes_joueurs = [salon["votes"][j] for j in salon["joueurs"]]
+                regle = salon.get("regle_de_validation")
 
-        # Afficher le résultat des votes réservé au créateur de session (US-013) + Relancer un tour réservé au créateur de session (US-02)
+                st.success("Résultat du tour : tous les votes sont identiques. Le tour est **valide** !!")
+            else:
+                st.error("Résultat du tour : tous les votes ne sont pas indentiques. Le tour est **invalide**, relancez un nouveau tour !")
+
+        # Faire afficher le résultat des votes réservé au créateur de session (US-013) + Relancer un tour réservé au créateur de session (US-02)
         if pseudo == salon["createur"]:
             if not visibles:
                 if not tous_voté:
