@@ -2,6 +2,15 @@ import random
 
 cartes = ["0", "1", "2", "3", "5", "8", "13", "20", "40", "100", "?", "☕"]
 
+regles_de_validation = [
+    "règle stricte",
+    "règle stricte au premier tour",
+    "moyenne",
+    "médiane",
+    "majorité absolue",
+    "majorité relative",
+]
+
 def creer_salon(salons, pseudo):
     code = str(random.randint(1000, 9999))
     salons[code] = {
@@ -9,6 +18,10 @@ def creer_salon(salons, pseudo):
         "joueurs": [pseudo],
         "votes": {pseudo: None},
         "cartes_visibles": False,
+        "tour": 1,
+        "regle_de_validation": None,
+        'tour_demarre': False,
+        "resultat_tour": None,
     }
     return code
 
@@ -20,14 +33,67 @@ def rejoindre_salon(salons, code, pseudo):
         return True
     return False
 
+def definir_regle_de_validation(salons, code, regle):
+    if code in salons and regle in regles_de_validation:
+        salons[code]["regle_de_validation"] = regle
+        salons[code]["tour_demarre"] = True
+        salons[code]["resultat_tour"] = None
+        return True
+    return False
+
 def voter(salons, code, pseudo, carte):
-    if code in salons and pseudo in salons[code]["joueurs"]:
+    if code in salons and salons[code].get("tour_demarre") and pseudo in salons[code]["joueurs"]:
         salons[code]["votes"][pseudo] = carte
         return True
     return False
 
+def tous_ont_vote(salon):
+    joueurs = salon.get("joueurs", [])
+    if not joueurs:
+        return False
+    votes = salon.get("votes", {})
+    return all(votes.get(joueur) is not None for joueur in joueurs)
+
+def resultat_tour(salon):
+    if not salon.get("cartes_visibles") or not tous_ont_vote(salon):
+        return None
+    regle = salon.get("regle_de_validation")
+    votes_joueurs = [salon["votes"][joueur] for joueur in salon["joueurs"]]
+    if regle == "règle stricte":
+        return len(set(votes_joueurs)) == 1
+    return None
+
 def afficher_votes(salons, code):
-    if code in salons:
-        salons[code]["cartes_visibles"] = not salons[code].get("cartes_visibles", False)
+    if code in salons and tous_ont_vote(salons[code]):
+        salons[code]["cartes_visibles"] = True
+        salons[code]["resultat_tour"] = resultat_tour(salons[code])
         return True
     return False
+
+def nouveau_tour(salons, code):
+    if code not in salons:
+        return False
+    salon = salons[code]
+    regle_actuelle = salon.get("regle_de_validation")
+    resultat_precedent = salon.get("resultat_tour")
+
+    verrou_stricte = (regle_actuelle == "règle stricte" and resultat_precedent is not True)
+
+    if resultat_precedent is True:
+        salon["tour"] = 1
+    else:
+        salon["tour"] = salon.get("tour", 1) + 1
+
+    salon["cartes_visibles"] = False
+    salon["resultat_tour"] = None
+    for joueur in salon["joueurs"]:
+        salon["votes"][joueur] = None
+
+    if verrou_stricte:
+        salon["regle_de_validation"] = "règle stricte"
+        salon["tour_demarre"] = True
+    else:
+        salon["regle_de_validation"] = None
+        salon["tour_demarre"] = False
+
+    return True
