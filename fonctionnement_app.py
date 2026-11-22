@@ -3,8 +3,8 @@ import random
 cartes = ["0", "1", "2", "3", "5", "8", "13", "20", "40", "100", "?", "☕"]
 
 regles_de_validation = [
-    "règle stricte",
-    "règle stricte au premier tour",
+    "stricte",
+    "stricte au premier tour",
     "moyenne",
     "médiane",
     "majorité absolue",
@@ -59,7 +59,7 @@ def resultat_tour(salon):
         return None
     regle = salon.get("regle_de_validation")
     votes_joueurs = [salon["votes"][joueur] for joueur in salon["joueurs"]]
-    if regle == "règle stricte":
+    if regle == "stricte":
         return len(set(votes_joueurs)) == 1
     return None
 
@@ -77,7 +77,7 @@ def nouveau_tour(salons, code):
     regle_actuelle = salon.get("regle_de_validation")
     resultat_precedent = salon.get("resultat_tour")
 
-    verrou_stricte = (regle_actuelle == "règle stricte" and resultat_precedent is not True)
+    verrou_stricte = (regle_actuelle == "stricte" and resultat_precedent is not True)
 
     if resultat_precedent is True:
         salon["tour"] = 1
@@ -90,7 +90,7 @@ def nouveau_tour(salons, code):
         salon["votes"][joueur] = None
 
     if verrou_stricte:
-        salon["regle_de_validation"] = "règle stricte"
+        salon["regle_de_validation"] = "stricte"
         salon["tour_demarre"] = True
     else:
         salon["regle_de_validation"] = None
