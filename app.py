@@ -1,10 +1,14 @@
 import streamlit as st
 from fonctionnement_app import (
-    cartes, 
-    creer_salon, 
-    rejoindre_salon, 
-    voter, 
+    cartes,
+    regles_de_validation,
+    creer_salon,
+    rejoindre_salon,
+    definir_regle_de_validation,
+    voter,
+    tous_ont_vote,
     afficher_votes,
+    nouveau_tour,
 )
 
 @st.cache_resource
@@ -13,7 +17,7 @@ def get_salons():
 
 salons = get_salons()
 
-# Écran d'accueil
+# Écran d'accueil (US-011)
 if "code_salon" not in st.session_state:
     st.title("Planning Poker")
     pseudo = st.text_input("Votre pseudo :")
@@ -39,7 +43,7 @@ if "code_salon" not in st.session_state:
         else:
             st.error("Erreur : code ou pseudo invalide")
 
-# Écran du salon
+# Écran du salon (US-011)
 else:
     code = st.session_state.code_salon
     pseudo = st.session_state.pseudo
@@ -49,41 +53,83 @@ else:
         st.rerun()
 
     salon = salons[code]
+    visibles = salon.get("cartes_visibles", False)
+    tour = salon.get("tour", 1)
+    tour_demarre = salon.get("tour_demarre", False)
+    regle = salon.get("regle_de_validation", None)
+    resultat_tour = salon.get("resultat_tour")
+    tous_voté = tous_ont_vote(salon)
 
-    st.title("Salon de jeu")
+    if tour_demarre:
+        st.title(f"Salon de jeu - Tour **{tour}**")
+    else:
+        st.title("Salon de jeu")
     st.write(f"Code à partager : **{code}** | Joueur : **{pseudo}**")
+    if regle:
+        st.write(f"Règle de validation : **{regle}**")
     st.write("---")
 
-    # Sélection d'une carte (US-012)
-    st.write("### Choisissez votre carte :")
-    colonnes = st.columns(6)
-    for i, carte in enumerate(cartes):
-        with colonnes[i % 6]:
-            if st.button(carte, key=f"btn_{carte}"):
-                voter(salons, code, pseudo, carte)
+    # Selection d'une règle de validation (US-02)
+    if not tour_demarre:
+        if pseudo == salon["createur"]:
+            st.write("### Définir la règle de validation pour ce tour :")
+            regle_selectionnee = st.selectbox("Règle :", regles_de_validation, key="select_regle")
+            if st.button("Valider la règle", key="btn_valider_regle"):
+                definir_regle_de_validation(salons, code, regle_selectionnee)
                 st.rerun()
+        else:
+            st.warning("En attente de la définition de la règle par le créateur du salon...")
+    else:
 
-    mon_vote = salon["votes"].get(pseudo)
-    if mon_vote is not None:
-        st.info(f"Votre carte sélectionnée : **{mon_vote}**")
+        # Sélection d'une carte (US-012)
+        st.write("### Choisissez votre carte :")
+        colonnes = st.columns(6)
+        for i, carte in enumerate(cartes):
+            with colonnes[i % 6]:
+                if st.button(carte, key=f"btn_{carte}"):
+                    voter(salons, code, pseudo, carte)
+                    st.rerun()
+
+        mon_vote = salon["votes"].get(pseudo)
+        if mon_vote is not None:
+            st.info(f"Votre carte sélectionnée : **{mon_vote}**")
+
+        st.write("---")
+
+        # Afficher les résultats d'un tour + conditions de validité d'un tour (US-02)
+        if visibles and resultat_tour is not None:
+            if resultat_tour is True:
+                st.success("Résultat du tour : Tous les votes sont identiques. Le tour est **valide** !!")
+            else:
+                st.error("Résultat du tour : Les votes ne sont pas tous identiques. Le tour est **invalide**, relancez un nouveau tour !")
+
+        # Afficher le résultat des votes réservé au créateur de session (US-013) + Relancer un tour réservé au créateur de session (US-02)
+        if pseudo == salon["createur"]:
+            if not visibles:
+                if not tous_voté:
+                    st.warning("En attente des votes de tous les joueurs...")
+                if st.button("Afficher les cartes", key="btn_afficher", disabled=not tous_voté):
+                    afficher_votes(salons, code)
+                    st.rerun()
+            else:
+                libelle_relance = (
+                    "Lancer un nouveau tour"
+                    if resultat_tour is True
+                    else "Relancer un tour"
+                )
+                if st.button(libelle_relance, key="btn_relancer"):
+                    nouveau_tour(salons, code)
+                    st.rerun()
 
     st.write("---")
 
-    # Cacher ou afficher les cartes réservé au créateur de session (US-013)
-    if pseudo == salon["createur"]:
-        visibles = salon.get("cartes_visibles", False)
-        boutons_hide_and_show = "Cacher les cartes" if visibles else "Afficher les cartes"
-        if st.button(boutons_hide_and_show, key="btn_hide_show"):
-            afficher_votes(salons, code)
-            st.rerun()
-    
-    # Liste des joueurs et état de leur vote
+    # Liste des joueurs + état de leur vote (US-011)
     st.write("### Joueurs connectés :")
     for joueur in salon["joueurs"]:
         vote_joueur = salon["votes"].get(joueur)
         if vote_joueur is not None:
             if salon.get("cartes_visibles", False):
-                st.write(f"- {joueur} : a choisi la carte **{vote_joueur}**")
+                st.write(f"- {joueur} : **{vote_joueur}**")
             else:
                 st.write(f"- {joueur} : a choisi une carte")
         else:
